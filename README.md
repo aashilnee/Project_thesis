@@ -1,4 +1,4 @@
-## Project thesis
+## Project Thesis
 #### Annotator
 - Annotation tool for stereo images
 
