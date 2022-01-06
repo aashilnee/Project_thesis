@@ -16,10 +16,7 @@ from model.roi_layers import nms
 from model.rpn.bbox_transform import bbox_transform_inv, kpts_transform_inv, border_transform_inv
 from model.stereo_rcnn.resnet import resnet
 
-from model.utils.net_utils import save_net, load_net, vis_detections
-import glob
-from tqdm import tqdm
-#from norfair import Detection, Tracker, Color, centroid  # TODO får feilmelding på denne
+
 
 
 try:
@@ -82,17 +79,11 @@ if __name__ == '__main__':
 
     stereoRCNN.eval()
 
-    # TODO BILDER
     # read data
-    img_l_path = 'demo/left_292.png' # TODO
-    img_r_path = 'demo/right_292.png' # TODO
+    img_l_path = 'demo/left_384.png'
+    img_r_path = 'demo/right_384.png'
 
-    #img = 'demo/test.png'
-    #img = cv2.imread(img)
-    #im_shape = img.shape
 
-    #img_right = img[:int(im_shape[0] / 2), :, :]    # r_img
-    #img_left = img[int(im_shape[0] / 2) - 1:-1, :, :]  #l_img
 
 
 
@@ -157,10 +148,7 @@ if __name__ == '__main__':
     box_delta_left = box_delta_left.view(-1, 4)
     box_delta_right = box_delta_right.view(-1, 4)
 
-    # TODO dim_orien
-    # TODO kpts_prob
-    # TODO max_prob, kpts_delta
-    # todo left_prob left_delta, right_prob, right_delta
+
 
     box_delta_left = box_delta_left * torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_STDS).cpu() \
                      + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cpu()
@@ -168,7 +156,7 @@ if __name__ == '__main__':
                       + torch.FloatTensor(cfg.TRAIN.BBOX_NORMALIZE_MEANS).cpu()
 
 
-    # TODO dim_orien
+
 
     box_delta_left = box_delta_left.view(1, -1, 4 * len(kitti_classes))
     box_delta_right = box_delta_right.view(1, -1, 4 * len(kitti_classes))
@@ -189,7 +177,7 @@ if __name__ == '__main__':
     det_toc = time.time()
     detect_time = det_toc - det_tic
 
-    # TODO calib
+
 
     im2show_left = np.copy(cv2.imread(img_l_path))
     im2show_right = np.copy(cv2.imread(img_r_path))
@@ -200,9 +188,9 @@ if __name__ == '__main__':
       cls_scores = scores[inds]
       _, order = torch.sort(cls_scores, 0, True)
 
-    det_l = np.zeros([0, 2], dtype=np.int)   # TODO
-    det_r = np.zeros([0, 2], dtype=np.int)   # TODO
-    det_3d = np.zeros([0, 3], dtype=np.int)  # TODO
+    det_l = np.zeros([0, 2], dtype=np.int)
+    det_r = np.zeros([0, 2], dtype=np.int)
+    det_3d = np.zeros([0, 3], dtype=np.int)
 
     cls_boxes_left = pred_boxes_left[inds][:, 4:8]
     cls_boxes_right = pred_boxes_right[inds][:, 4:8]
@@ -231,74 +219,56 @@ if __name__ == '__main__':
         # Visualize detected boxes
         im2show_left = cv2.rectangle(im2show_left, l_bbox[0:2], l_bbox[2:4], color, 5)
         im2show_right = cv2.rectangle(im2show_right, r_bbox[0:2], r_bbox[2:4], color, 5)
-        # TODO--------------------------------------------------------------------------------------
 
-        print("test l_box", l_bbox)
-        print("test r_box", r_bbox)
-
-        '''
-        #print("test l_box 0_2", l_bbox[0:2])
-        #print("test l_box 2_4", l_bbox[2:4])
-        print("test l_box", l_bbox)
-        print("test r_box", r_bbox)
-        #print("test l_rois", l_rois)
-
-        left_roi = [[161, 34, 475, 117], [232, 277, 364, 88]]
-        right_roi = [[222, 34, 475, 117], [278, 277, 364, 88]]
-
-        l_box = (161, 34, 475+161, 117+34)
-        r_box = (222, 34, 475+222, 117+34)
-
-        #for j, roii in enumerate(left_roi):
-          #l_box = tuple(int(np.round(x)) for x in left_roi[j :4])
-          #r_box = tuple(int(np.round(x)) for x in right_roi[j :4])
-          #print("TEST1", tuple(left_roi[j :4]))
-        #im2show_left = cv2.rectangle(im2show_left, l_box[0:2], l_bbox[2:4], color, 5)
-        im2show_right = cv2.rectangle(im2show_right, r_box[0:2], r_box[2:4], color, 5)
-
-        '''
-
-        # TODO--------------------------------------------------------------------------------------
         # Find mid point in left box
-        left_key = np.array([l_bbox[0] + int((l_bbox[2] - l_bbox[0]) / 2), l_bbox[1] + int((l_bbox[3] - l_bbox[1]) / 2)], dtype=np.int)  # TODO BRUK DENNE
+        left_key = np.array([l_bbox[0] + int((l_bbox[2] - l_bbox[0]) / 2), l_bbox[1] + int((l_bbox[3] - l_bbox[1]) / 2)], dtype=np.int)
         # Find mid point in right box
-        right_key = np.array([r_bbox[0] + int((r_bbox[2] - r_bbox[0]) / 2), r_bbox[1] + int((r_bbox[3] - r_bbox[1]) / 2)], dtype=np.int)  # TODO
+        right_key = np.array([r_bbox[0] + int((r_bbox[2] - r_bbox[0]) / 2), r_bbox[1] + int((r_bbox[3] - r_bbox[1]) / 2)], dtype=np.int)
 
         det_l = np.vstack((det_l, left_key))
         det_r = np.vstack((det_r, right_key))
 
-        sl_key = np.array([left_key], dtype=np.float32)  # TODO unødvendig?
-        sr_key = np.array([right_key], dtype=np.float32) # TODO unødvendig?
+        sl_key = np.array([left_key], dtype=np.float32)
+        sr_key = np.array([right_key], dtype=np.float32)
 
 
 
-        # TODO print sl_key, sr_key, det_l, det_r
         for i in range(det_l.shape[0]):
           # x-coordinates of midpoint keypoints
-          left_x = det_l[i]
-          left_x = left_x[0]
+          left_x_y = det_l[i]
+          left_x = left_x_y[0]
           right_x = det_r[i]
           right_x = right_x[0]
+          # Left y-coordinate of midpoint keypoints (origin: bottom left corner)
+          left_y = 642 - left_x_y[1]
+
 
           # disparity, baseline and focal length
           disparity = right_x - left_x
           baseline = 122 # mm
           focal_length = 1.8  # mm
-          pixel_size = 0.00112 #0.00112  # mm
+          pixel_size = 0.00112 #0.00112  # mm/pixel
+
+
+          # x, y coordinates of point
+          x_coord = (baseline * left_x)/ (disparity)
+          y_coord = (baseline * left_y) / (disparity)
+
 
           # z-coordinate Depth = f*b/disparity
           depth = (focal_length * baseline) / (disparity*pixel_size)
 
-        print("left_x: ", str(left_x))
-        print("right_x: ", str(right_x))
+        #print("left_x: ", str(left_x))
+        #print("right_x: ", str(right_x))
+        print("x-coordinate: ", str(x_coord))
+        print("y-coordinate: ", str(y_coord))
         print("disparity: ", str(disparity))
         print("depth: ", str(depth))
 
-        #im2show_left = cv2.circle(im2show_left, tuple(det_l[i]), 1, color, 10)
-        #im2show_right = cv2.circle(im2show_right, tuple(det_r[i]), 1, color, 10)
+        im2show_left = cv2.circle(im2show_left, tuple(det_l[i]), 1, color, 10)
+        im2show_right = cv2.circle(im2show_right, tuple(det_r[i]), 1, color, 10)
 
 
-        # TODO når den er inni forloopen blir bare ett og ett bilde laget
         img = np.hstack((im2show_left, im2show_right))
         # Resize image
         im_scale = 0.5
